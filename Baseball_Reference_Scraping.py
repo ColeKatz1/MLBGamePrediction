@@ -1,3 +1,6 @@
+from cmath import nan
+from contextlib import nullcontext
+from turtle import home
 import pandas, numpy
 import requests, bs4
 import re, os
@@ -44,10 +47,26 @@ def pullTable(url, tableID):
     data = data.reset_index(drop = True)
     return(data)
 
-def pullBattingData(url):
-    OaklandAthleticsBatting = pullTable(url, "OaklandAthleticsbatting")
-    OaklandAthleticsBatting = OaklandAthleticsBatting.loc[[len(OaklandAthleticsBatting)-1]]
-    return(OaklandAthleticsBatting)
+def pullHeader(url, tableID):
+    res = requests.get(url)
+    ## Work around comments
+    comm = re.compile("<!--|-->")
+    soup = bs4.BeautifulSoup(comm.sub("", res.text), 'lxml')
+    tables = soup.findAll('table', id = tableID)
+    data_rows = tables[0].findAll('tr')
+    data_header = tables[0].findAll('thead')
+    data_header = data_header[0].findAll("tr")
+    data_header = data_header[0].findAll("th")
+    game_data = [[td.getText() for td in data_rows[i].findAll(['th','td'])]
+        for i in range(1)
+        ]
+    data = pandas.DataFrame(game_data)
+    return(data)
+
+def pullBattingData(url, team):
+    teamBatting = pullTable(url, team + "batting")
+    teamBatting = teamBatting.loc[[len(teamBatting)-1]]
+    return(teamBatting)
 
 def boxScoreUrls(url):
     res = requests.get(url)
@@ -118,12 +137,12 @@ def winOrLossList(url):
             winOrLossListFinal = winOrLossListFinal
     return(winOrLossListFinal)
 
-def getSeasonStats(url, team):
+def getSeasonStats(url, team, teamFullname):
     teamList = []
     battingDataList = []
     urlList = boxScoreUrls(url)
     for i in urlList:
-        battingData = pullBattingData(i)
+        battingData = pullBattingData(i, teamFullname)
         battingDataList.append(battingData)
     battingDataList = numpy.reshape(battingDataList, (162,24))
     dfOfBattingData = pandas.DataFrame(battingDataList) 
@@ -168,13 +187,47 @@ def transformSeasonStats(df):
             winningPercentage = winsTotal / gamesTotal
             winningPercentageList.append(winningPercentage)
     df['Win_Percentage'] = winningPercentageList
-
+    addMovingAveragesOfStat(df, 'R')
+    addMovingAveragesOfStat(df, 'SLG')
+    addMovingAveragesOfStat(df, 'BA')
+    addMovingAveragesOfStat(df, 'OBP')
+    addMovingAveragesOfStat(df, 'SO')
+    addMovingAveragesOfStat(df, 'AB')
+    addMovingAveragesOfStat(df, 'Pit')
+    addMovingAveragesOfStat(df, 'H')
+    addMovingAveragesOfStat(df, 'BB')
+    addMovingAveragesOfStat(df, 'OPS')
+    addMovingAveragesOfStat(df, 'RE24')
+    addMovingAveragesOfStat(df, 'Win_Percentage')
     return(df)
+
+def findMovingAverage(df, columnName, numberOfGames):
+    variableList = df[columnName]
+    variableSeries = pandas.Series(variableList)
+    windows = variableSeries.rolling(numberOfGames)
+    movingAverage = windows.mean()
+    movingAverageList = movingAverage.values.tolist()
+    movingAverageList.insert(0, nan)
+    movingAverageList.pop()
+    return(movingAverageList)
+
+def addMovingAveragesOfStat(df, stat):
+    movingAverage3 = findMovingAverage(df,stat,3)
+    df[stat + '_Moving_Average_3'] = movingAverage3
+    movingAverage10 = findMovingAverage(df,stat,10)
+    df[stat + '_Moving_Average_10'] = movingAverage10
+    movingAverage31 = findMovingAverage(df,stat,31)
+    df[stat + '_Moving_Average_31'] = movingAverage31
+
+
+#print(findMovingAverage(df, 'R',7))
 
 transformedDf = transformSeasonStats(df)
 
 print(transformedDf)
-#tryOne = getSeasonStats("https://www.baseball-reference.com/teams/OAK/2021-schedule-scores.shtml",'OAK')
+
+transformedDf.to_csv('transformedDf.csv')
+#tryOne = getSeasonStats("https://www.baseball-reference.com/teams/MIN/2021-schedule-scores.shtml",'MIN',"MinnesotaTwins")
 
 #print(tryOne)
 
