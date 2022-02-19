@@ -44,22 +44,6 @@ def pullTable(url, tableID):
     data = data.reset_index(drop = True)
     return(data)
 
-def pullHeader(url, tableID):
-    res = requests.get(url)
-    ## Work around comments
-    comm = re.compile("<!--|-->")
-    soup = bs4.BeautifulSoup(comm.sub("", res.text), 'lxml')
-    tables = soup.findAll('table', id = tableID)
-    data_rows = tables[0].findAll('tr')
-    data_header = tables[0].findAll('thead')
-    data_header = data_header[0].findAll("tr")
-    data_header = data_header[0].findAll("th")
-    game_data = [[td.getText() for td in data_rows[i].findAll(['th','td'])]
-        for i in range(1)
-        ]
-    data = pandas.DataFrame(game_data)
-    return(data)
-
 def pullBattingData(url):
     OaklandAthleticsBatting = pullTable(url, "OaklandAthleticsbatting")
     OaklandAthleticsBatting = OaklandAthleticsBatting.loc[[len(OaklandAthleticsBatting)-1]]
