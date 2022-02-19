@@ -137,12 +137,12 @@ def winOrLossList(url):
             winOrLossListFinal = winOrLossListFinal
     return(winOrLossListFinal)
 
-def getSeasonStats(url, team, teamFullname):
+def getSeasonStats(url, team, teamFullName):
     teamList = []
     battingDataList = []
     urlList = boxScoreUrls(url)
     for i in urlList:
-        battingData = pullBattingData(i, teamFullname)
+        battingData = pullBattingData(i, teamFullName)
         battingDataList.append(battingData)
     battingDataList = numpy.reshape(battingDataList, (162,24))
     dfOfBattingData = pandas.DataFrame(battingDataList) 
@@ -158,48 +158,8 @@ def getSeasonStats(url, team, teamFullname):
     dfOfBattingData['Opponent'] = opponent
     dfOfBattingData['HomeOrAway'] = homeOrAway
     dfOfBattingData['url'] = urlList
+    dfOfBattingData.to_csv(teamFullName + "_Batting_Statistics.csv")
     return(dfOfBattingData)
-
-df = pandas.read_csv('improvedData.csv')
-
-def transformSeasonStats(df):
-    #df = getSeasonStats(url, team)
-    runsList = df['R']
-    runsTotal = 0
-    runsTotalList = []
-    for i in range(len(runsList)):
-        runsTotal = runsTotal + runsList[i]
-        runsTotalList.append(runsTotal)
-    df['R_Count'] = runsTotalList
-
-    winsList = df['WinOrLoss']
-    winsTotal = 0
-    gamesTotal = 0
-    winningPercentageList = []
-    for i in range(len(winsList)):
-        if winsList[i] == 0:
-            winsTotal = winsTotal + 1
-            gamesTotal = gamesTotal + 1
-            winningPercentage = winsTotal / gamesTotal
-            winningPercentageList.append(winningPercentage)
-        elif winsList[i] == 1:
-            gamesTotal = gamesTotal + 1
-            winningPercentage = winsTotal / gamesTotal
-            winningPercentageList.append(winningPercentage)
-    df['Win_Percentage'] = winningPercentageList
-    addMovingAveragesOfStat(df, 'R')
-    addMovingAveragesOfStat(df, 'SLG')
-    addMovingAveragesOfStat(df, 'BA')
-    addMovingAveragesOfStat(df, 'OBP')
-    addMovingAveragesOfStat(df, 'SO')
-    addMovingAveragesOfStat(df, 'AB')
-    addMovingAveragesOfStat(df, 'Pit')
-    addMovingAveragesOfStat(df, 'H')
-    addMovingAveragesOfStat(df, 'BB')
-    addMovingAveragesOfStat(df, 'OPS')
-    addMovingAveragesOfStat(df, 'RE24')
-    addMovingAveragesOfStat(df, 'Win_Percentage')
-    return(df)
 
 def findMovingAverage(df, columnName, numberOfGames):
     variableList = df[columnName]
@@ -219,19 +179,86 @@ def addMovingAveragesOfStat(df, stat):
     movingAverage31 = findMovingAverage(df,stat,31)
     df[stat + '_Moving_Average_31'] = movingAverage31
 
+def addSeasonLongAverageStatistics(df, stat):
+    variableContinuedStatList = []
+    variableList = df[stat]
+    totalSum = 0
+    totalCount = 0
 
-#print(findMovingAverage(df, 'R',7))
+    for i in range(len(variableList)):
+        totalSum = totalSum + variableList[i]
+        totalCount = totalCount + 1
+        average = totalSum/totalCount
+        variableContinuedStatList.append(average)
+    df[stat + '_Season_Long_Average'] = variableContinuedStatList
 
-transformedDf = transformSeasonStats(df)
+def addSeasonLongCount(df, stat):
+    countTotalList = []
+    variableList = df[stat]
+    count = 0
+    for i in range(len(variableList)):
+        count = count + int(variableList[i])
+        countTotalList.append(count)
+    df[stat + "_Season_Long_Count"] = countTotalList
 
-print(transformedDf)
 
-transformedDf.to_csv('transformedDf.csv')
-#tryOne = getSeasonStats("https://www.baseball-reference.com/teams/MIN/2021-schedule-scores.shtml",'MIN',"MinnesotaTwins")
+def transformedSeasonStats(df):
+    #df = getSeasonStats(url, team, teamFullName)
+    winsList = df['WinOrLoss']
+    winsTotal = 0
+    gamesTotal = 0
+    winningPercentageList = []
+    for i in range(len(winsList)):
+        if winsList[i] == 0:
+            winsTotal = winsTotal + 1
+            gamesTotal = gamesTotal + 1
+            winningPercentage = winsTotal / gamesTotal
+            winningPercentageList.append(winningPercentage)
+        elif winsList[i] == 1:
+            gamesTotal = gamesTotal + 1
+            winningPercentage = winsTotal / gamesTotal
+            winningPercentageList.append(winningPercentage)
+    df['Win_Percentage'] = winningPercentageList
+    addSeasonLongCount(df,'R')
+    addSeasonLongCount(df,'H')
+    addSeasonLongCount(df,'BB')
+    addSeasonLongCount(df,'SO')
+    addSeasonLongCount(df,'PA')
+    addMovingAveragesOfStat(df, 'R')
+    addMovingAveragesOfStat(df, 'SLG')
+    addMovingAveragesOfStat(df, 'BA')
+    addMovingAveragesOfStat(df, 'OBP')
+    addMovingAveragesOfStat(df, 'SO')
+    addMovingAveragesOfStat(df, 'AB')
+    addMovingAveragesOfStat(df, 'Pit')
+    addMovingAveragesOfStat(df, 'H')
+    addMovingAveragesOfStat(df, 'BB')
+    addMovingAveragesOfStat(df, 'OPS')
+    addMovingAveragesOfStat(df, 'RE24')
+    addMovingAveragesOfStat(df, 'Win_Percentage')
+    addSeasonLongAverageStatistics(df,'BA')
+    addSeasonLongAverageStatistics(df,'SLG')
+    addSeasonLongAverageStatistics(df,'OPS')
+    return(df)
 
-#print(tryOne)
+def completedBattingStatsOfTeamdf(url, team, teamFullName):
+    getSeasonStats(url, team, teamFullName)
+    df = pandas.read_csv(teamFullName + "_Batting_Statistics.csv")
+    transformedDf = transformedSeasonStats(df)
+    return(transformedDf)
 
-#tryOne.to_csv('improvedData.csv')
+
+def completedBattingStatsOfAllTeams():
+    allScheduleUrlList = ["https://www.baseball-reference.com/teams/ARI/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/ATL/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/BAL/2021-schedule-scores.shtml", "https://www.baseball-reference.com/teams/BOS/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/CHW/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/CHC/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/CIN/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/CLE/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/COL/2021.shtml","https://www.baseball-reference.com/teams/DET/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/HOU/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/KCR/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/LAA/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/LAD/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/MIA/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/MIL/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/MIN/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/NYY/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/NYM/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/OAK/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/PHI/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/PIT/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/SDP/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/SFG/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/SEA/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/STL/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/TBR/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/TEX/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/TOR/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/WSN/2021-schedule-scores.shtml"]
+    allTeamList = ['ARI','ATL','BAL','BOS','CHW','CHC','CIN','CLE','COL','DET','HOU','KCR','LAA','LAD','MIA','MIL','MIN','NYY','NYM','OAK','PHI','PIT','SDP','SFG','SEA','STL','TBR','TEX','TOR','WAS']
+    allTeamFullNameList = ["ArizonaDiamondbacks","AtlantaBraves","BaltimoreOrioles","BostonRedSox","ChicagoWhiteSox","ChicagoCubs","CincinnatiReds","ClevelandIndians","ColoradoRockies","DetroitTigers","HoustonAstros","KansasCityRoyals","LosAngelesAngels","LosAngelesDodgers","MiamiMarlins","MilwaukeeBrewers","MinnesotaTwins","NewYorkYankees","NewYorkMets","OaklandAthletics","PhiladelphiaPhillies","PittsburghPirates","SanDiegoPadres","SanFranciscoGiants","SeattleMariners","StLouisCardinals","TampaBayRays","TexasRangers","TorontoBlueJays","WashingtonNationals"]
+    # only need 1 for loop to go through each team
+    for i in range(len(allTeamList)):
+        completedBattingStatsOfTeamdf(allScheduleUrlList[i],allTeamList[i],allTeamFullNameList[i])
+        
+
+print(getSeasonStats("https://www.baseball-reference.com/teams/STL/2021-schedule-scores.shtml",'STL',"StLouisCardinals"))
+
 
 
 
