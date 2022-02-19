@@ -9,3 +9,7 @@ Process:
 3. Combine datasets to form one dataset with the ratios of moving averages serving as the variables
 4. Determine the most important features
 5. Use SVM to predict wins and losses for each team
+
+Files:
+
+The Baseball_Reference_Scraping.py file collects data from baseball-reference.com
