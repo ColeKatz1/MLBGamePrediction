@@ -13,3 +13,7 @@ Process:
 Files:
 
 The Baseball_Reference_Scraping.py file collects data from baseball-reference.com
+
+Prediction Accuracy:
+
+To start, we used svc linear machine learning to test out the prediction on a very basic model. The model only uses batting data from one team. It also gives the winning percentage of one team and tells if that team is home or away. It does not consider pitching data nor the opponent. Still, the svc linear model obtains results consistenly between 53% to 60%. Hopefully, this can be greatly improved as opponent data and pitching data are added to the dataset.
