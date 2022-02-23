@@ -1,5 +1,7 @@
 from cmath import nan
 from contextlib import nullcontext
+from itertools import groupby
+from pickle import TRUE
 from random import seed
 from turtle import home
 import pandas, numpy
@@ -308,43 +310,108 @@ def combineToOneDataFrame():
     dfComplete.to_csv('dfComplete.csv')
     return(dfComplete)
 
-def createRatioVariables(df):
-    # maybe check if opponent and url is the same, then you can make a new dataframe from this one with the required math
-    # so if url matches, then add a row to the new data frame with the team divided by the opponents stats to form the ratio and then you can also add the win loss column after
-    # all we need to do is find the matching urls and then divide the first row by the row with the matching url
-    winOrLoss = df.filter(['WinOrLoss','url'])
-    winOrLossDf = pandas.DataFrame(winOrLoss)
-    df = df.drop(['AB','R','H','RBI','BB','SO','PA','BA','OBP','SLG','OPS','Pit','Str','RE24','WinOrLoss','HomeOrAway','Team','Opponent'], axis = 1)
-    df = df.dropna(axis=0)
-    df = df.iloc[:,3:]
-    df = df.values.tolist()
+def divide(two_rows):
+    x, y = two_rows.values
+    return pandas.Series(x-y, two_rows.columns)
+
+
+def createRatioVariables():
+    dfOld = pandas.read_csv('dfComplete.csv')
+    df = pandas.DataFrame({
+    'url': dfOld['url'],
+    'Win_Percentage': dfOld['Win_Percentage'],
+    'R_Season_Long_Count': dfOld['R_Season_Long_Count'],
+    'H_Season_Long_Count': dfOld['H_Season_Long_Count'],
+    'BB_Season_Long_Count': dfOld['BB_Season_Long_Count'],
+    'SO_Season_Long_Count': dfOld['SO_Season_Long_Count'],
+    'PA_Season_Long_Count': dfOld['PA_Season_Long_Count'],
+    'R_Moving_Average_3': dfOld['R_Moving_Average_3'],
+    'R_Moving_Average_10': dfOld['R_Moving_Average_10'],
+    'R_Moving_Average_31': dfOld['R_Moving_Average_31'],
+    'SLG_Moving_Average_3': dfOld['SLG_Moving_Average_3'],
+    'SLG_Moving_Average_10': dfOld['SLG_Moving_Average_10'],
+    'SLG_Moving_Average_31': dfOld['SLG_Moving_Average_31'],
+    'BA_Moving_Average_3': dfOld['BA_Moving_Average_3'],
+    'BA_Moving_Average_10': dfOld['BA_Moving_Average_10'],
+    'BA_Moving_Average_31': dfOld['BA_Moving_Average_31'],
+    'OBP_Moving_Average_3': dfOld['OBP_Moving_Average_3'],
+    'OBP_Moving_Average_10': dfOld['OBP_Moving_Average_10'],
+    'OBP_Moving_Average_31': dfOld['OBP_Moving_Average_31'],
+    'SO_Moving_Average_3': dfOld['SO_Moving_Average_3'],
+    'SO_Moving_Average_10': dfOld['SO_Moving_Average_10'],
+    'SO_Moving_Average_31': dfOld['SO_Moving_Average_31'],
+    'AB_Moving_Average_3': dfOld['AB_Moving_Average_3'],
+    'AB_Moving_Average_10': dfOld['AB_Moving_Average_10'],
+    'AB_Moving_Average_31': dfOld['AB_Moving_Average_31'],
+    'Pit_Moving_Average_3': dfOld['Pit_Moving_Average_3'],
+    'Pit_Moving_Average_10': dfOld['Pit_Moving_Average_10'],
+    'Pit_Moving_Average_31': dfOld['Pit_Moving_Average_31'],
+    'H_Moving_Average_3': dfOld['H_Moving_Average_3'],
+    'H_Moving_Average_10': dfOld['H_Moving_Average_10'],
+    'H_Moving_Average_31': dfOld['H_Moving_Average_31'],
+    'BB_Moving_Average_3': dfOld['BB_Moving_Average_3'],
+    'BB_Moving_Average_10': dfOld['BB_Moving_Average_10'],
+    'BB_Moving_Average_31': dfOld['BB_Moving_Average_31'],
+    'OPS_Moving_Average_3': dfOld['OPS_Moving_Average_3'],
+    'OPS_Moving_Average_10': dfOld['OPS_Moving_Average_10'],
+    'OPS_Moving_Average_31': dfOld['OPS_Moving_Average_31'],
+    'RE24_Moving_Average_3': dfOld['RE24_Moving_Average_3'],
+    'RE24_Moving_Average_10': dfOld['RE24_Moving_Average_10'],
+    'RE24_Moving_Average_31': dfOld['RE24_Moving_Average_31'],
+    'Win_Percentage_Moving_Average_3': dfOld['Win_Percentage_Moving_Average_3'],
+    'Win_Percentage_Moving_Average_10': dfOld['Win_Percentage_Moving_Average_10'],
+    'Win_Percentage_Moving_Average_31': dfOld['Win_Percentage_Moving_Average_31'],
+    'BA_Season_Long_Average': dfOld['BA_Season_Long_Average'],
+    'SLG_Season_Long_Average': dfOld['SLG_Season_Long_Average'],
+    'OPS_Season_Long_Average': dfOld['OPS_Season_Long_Average'],
+
+})
+    columns_for_ratio = ['Win_Percentage','R_Season_Long_Count','H_Season_Long_Count','BB_Season_Long_Count','SO_Season_Long_Count','PA_Season_Long_Count','R_Moving_Average_3','R_Moving_Average_10','R_Moving_Average_31','SLG_Moving_Average_3','SLG_Moving_Average_10','SLG_Moving_Average_31','BA_Moving_Average_3','BA_Moving_Average_10','BA_Moving_Average_31'
+    ,'OBP_Moving_Average_3','OBP_Moving_Average_10','OBP_Moving_Average_31','SO_Moving_Average_3','SO_Moving_Average_10','SO_Moving_Average_31','AB_Moving_Average_3','AB_Moving_Average_10','AB_Moving_Average_31'
+    ,'Pit_Moving_Average_3','Pit_Moving_Average_10','Pit_Moving_Average_31','H_Moving_Average_3','H_Moving_Average_10','H_Moving_Average_31'
+    ,'BB_Moving_Average_3','BB_Moving_Average_10','BB_Moving_Average_31','OPS_Moving_Average_3','OPS_Moving_Average_10','OPS_Moving_Average_31'
+    ,'RE24_Moving_Average_3','RE24_Moving_Average_10','RE24_Moving_Average_31','Win_Percentage_Moving_Average_3','Win_Percentage_Moving_Average_10','Win_Percentage_Moving_Average_31',
+    'BA_Season_Long_Average','SLG_Season_Long_Average','OPS_Season_Long_Average']
+    df = df.groupby('url')[columns_for_ratio].apply(divide)
     return(df)
 
-#print(combineToOneDataFrame())
-#print(completedBattingStatsOfAllTeams())
+def addWinOrLoss():
+    df = pandas.read_csv('dfComplete.csv')
+    winOrLossDf = df[['WinOrLoss','url','HomeOrAway']]
+    winOrLossDfDropped = winOrLossDf.iloc[:-2429]
+    dfRatio = createRatioVariables()
+    #standardizedWin_Percentage = (dfRatio['Win_Percentage']-dfRatio['Win_Percentage'].mean() / dfRatio['Win_Percentage'].std())
+    #dfRatio = dfRatio.insert(2,'Standardized_Win',standardizedWin_Percentage)
+    dfRatio = (dfRatio-dfRatio.mean())/dfRatio.std()
+    dfFinal = pandas.merge(dfRatio,winOrLossDfDropped, on='url')
+    dfFinal = dfFinal.dropna(axis=0)
+    return(dfFinal)
 
-def pullPitching(url, team):
-    teamBatting = pullTable(url, team + "batting")
-    teamBatting = teamBatting.loc[[len(teamBatting)-1]]
-    return(teamBatting)
-
-#print(findTables("https://www.baseball-reference.com/boxes/OAK/OAK202104030.shtml"))
-
-df = pandas.read_csv('dfComplete.csv')
-#dfFull = dfFull.drop(['AB','R','H','RBI','BB','SO','PA','BA','OBP','SLG','OPS','Pit','Str','RE24','WinOrLoss'], axis = 1)
-
-df = df.dropna(axis = 0)
+df = addWinOrLoss()
+df = df.drop(['url'],axis=1)
+df = df.replace([numpy.inf,-numpy.inf],nan)
+df = df.dropna(axis=0)
+#df = df.drop(['url'])
 y = df['WinOrLoss']
+x = df[['HomeOrAway']]
 
-x = df.drop(['AB','R','H','RBI','BB','SO','PA','BA','OBP','SLG','OPS','Pit','Str','RE24','WinOrLoss','Team','Opponent','url'],axis=1)
+#'Win_Percentage_Moving_Average_10','R_Moving_Average_10','SO_Moving_Average_3']]#'Win_Percentage','R_Season_Long_Count','Win_Percentage_Moving_Average_10']]#,'R_Season_Long_Count']]#,'R_Moving_Average_31','R_Season_Long_Count','SLG_Moving_Average_3','SLG_Moving_Average_31','BA_Season_Long_Average','Win_Percentage_Moving_Average_10','OPS_Moving_Average_3','OPS_Moving_Average_10','Win_Percentage_Moving_Average_3']]
+#count = numpy.isinf(df).values.sum()
+#print("It contains " + str(count) + " infinite values")
+#count = numpy.isinf(df).values.sum()
+#print("It contains " + str(count) + " infinite values")
+#print("done")
 
-for i in range(100):
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.2)
-    svc_lin = SVC(kernel = 'linear', )
-    svc_lin_model = svc_lin.fit(x_train, y_train)
-    print('SVC Linear:', svc_lin_model.score(x_test, y_test))
-    #score = svc_lin_model.score(x_test, y_test)
-    #totalScore = totalScore + score
-    #count = count + 1
-    #print(totalScore/count)
+#print(x)
+totalScore = 0
+count = 0
+for i in range(100):   
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.20)
+    forest = RandomForestClassifier(n_estimators = 10, criterion = 'entropy')
+    forest_model = forest.fit(x_train, y_train)
+    score = forest_model.score(x_test, y_test)
+    #print('SVC Linear:', svc_lin_model.score(x_test, y_test))
+    totalScore = totalScore + score
+    count = count + 1
+    print(totalScore/count)
 
