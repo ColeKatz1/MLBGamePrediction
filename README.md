@@ -9,3 +9,10 @@ Process:
 3. Then, for each game, we combine the stats of the two teams playing by subtracting the away team's stats from the home team's stats to create new variables that account for opponents. For example, for the variable "seasonLongRunCount", subtraction for example could be (100 runs - 94 runs) = 6 runs. The new statistic we use for machine learning is that the home team has a total of 6 more runs than the away team for the season.
 4. Determine the most important features
 5. Use SVM to predict wins and losses for each team
+
+
+Files: 
+
+baseball_reference_scraping_functions.py provides all the necessary functions for scraping data from baseball reference in addition to providing functions for transforming these variables into more complicated statistics like moving averages and subtraction between each team's stats. 
+
+dfComplete.csv provides an example of statistics collected before subtraction takes place. Subtraction refers to subtracting the away team's data from the home team's data in order to create one set of statistics to use for machine learning. The .csv file gives a sense of the extensive data in our dataset.
