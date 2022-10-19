@@ -13,10 +13,19 @@ import glob
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier 
 import random
+from sklearn.linear_model import LogisticRegression
 
+from sklearn.metrics import classification_report,confusion_matrix
+from sklearn.neural_network import MLPClassifier
+from sklearn.neural_network import MLPRegressor
+from torch import long
+
+
+#this function finds all tables on a given url
+#this is useful for when we want to pull a table, we need to know the title of the table (the table id)
+# on this site, table ids follow the format: team+batting, team+pitching. For example, ArizonaDiamondbackspitching is one table id
 def findTables(url):
     res = requests.get(url)
-    ## The next two lines get around the issue with comments breaking the parsing.
     comm = re.compile("<!--|-->")
     soup = bs4.BeautifulSoup(comm.sub("", res.text), 'lxml')
     divs = soup.findAll('div', id = "content")
@@ -30,12 +39,11 @@ def findTables(url):
             ids.append(x)
     return(ids)
 
-## Pulls a single table from a url provided by the user.
-## The desired table should be specified by tableID.
-## This function is used in all functions that do more complicated pulls.
+#this functions returns the data from a specific table in a given url
+#the data that is returned is the team statistics for all relevant box score stats
+#The url input is the url to the game's box score. For example, "https://www.baseball-reference.com/boxes/SDN/SDN202104010.shtml"
 def pullTable(url, tableID):
     res = requests.get(url)
-    ## Work around comments
     comm = re.compile("<!--|-->")
     soup = bs4.BeautifulSoup(comm.sub("", res.text), 'lxml')
     tables = soup.findAll('table', id = tableID)
@@ -50,41 +58,27 @@ def pullTable(url, tableID):
     header = []
     for i in range(len(data.columns)):
         header.append(data_header[i].getText())
-    #data.columns = header
-    #data = data.loc[data[header[0]] != header[0]]
     data = data.drop(0)
     data = data.reset_index(drop = True)
     return(data)
 
-def pullHeader(url, tableID):
-    res = requests.get(url)
-    ## Work around comments
-    comm = re.compile("<!--|-->")
-    soup = bs4.BeautifulSoup(comm.sub("", res.text), 'lxml')
-    tables = soup.findAll('table', id = tableID)
-    data_rows = tables[0].findAll('tr')
-    data_header = tables[0].findAll('thead')
-    data_header = data_header[0].findAll("tr")
-    data_header = data_header[0].findAll("th")
-    game_data = [[td.getText() for td in data_rows[i].findAll(['th','td'])]
-        for i in range(1)
-        ]
-    data = pandas.DataFrame(game_data)
-    return(data)
-
+#this function gets the batting datatable for a given team
+#The input for team should have no spaces. For example, Arizona Diamonds would be input as "ArizonaDiamondbacks"
+#the url is a url to the box score of a given game for the team
 def pullBattingData(url, team):
     teamBatting = pullTable(url, team + "batting")
     teamBatting = teamBatting.loc[[len(teamBatting)-1]]
     return(teamBatting)
 
+
+#this function is used to find all the box scores in a season for a given team
+#For example, for the Arizona Diamondsbacks: url = "https://www.baseball-reference.com/teams/ARI/2021-schedule-scores.shtml"
+#Then, running this function with the given url will return a list of urls to every box score of the 2021 season for this team
 def boxScoreUrls(url):
     res = requests.get(url)
-    ## Work around comments
     comm = re.compile("<!--|-->")
     soup = bs4.BeautifulSoup(comm.sub("", res.text), 'lxml')
     dataLink = []
-    #tables = soup.findAll('table', id = "team_schedule")
-    #data_rows = tables[0].findAll('tr')
     for link in soup.findAll('a'):
         if link.has_attr('href'):
             allLinks = link.attrs['href']
@@ -99,6 +93,11 @@ def boxScoreUrls(url):
     finalUrlList = [i.replace('\']','') for i in finalUrlList]
     return(finalUrlList)
 
+
+#this function goes through a team's schedule and creates a new dummy variable for if the team is home or away
+#it uses the url to a team's game by game schedule
+#For example, it would be "https://www.baseball-reference.com/teams/ARI/2021-schedule-scores.shtml" for the Arizona Diamondbacks
+#This is the same url as used in the boxScoreUrls function for each team
 def homeOrAwayList(url):
     schedule_table = pullTable(url, 'team_schedule')
 
@@ -117,6 +116,9 @@ def homeOrAwayList(url):
             homeOrAwayBinary = homeOrAwayBinary
     return(homeOrAwayBinary)
 
+#This returns a list of opponents that a given team will play 
+#url is the same as above (same as homeOrAwayList and boxScoreUrls)
+#Each team in the list is given via their 3 letter abreviations. For example, LAD for the LA dodgers or ARI for the Arizona Diamondbakcs
 def opponentList(url):
     schedule_table = pullTable(url, 'team_schedule')
 
@@ -132,6 +134,9 @@ def opponentList(url):
     
     return(opponentListFinal)
 
+
+#this function goes through a team's schedule for the year and creates a new dummy variable that states if the game was won or lost
+#url is the same as the above functions (opponentList, boxScoreURls, etc.)
 def winOrLossList(url):
     schedule_table = pullTable(url, 'team_schedule')
     winOrLossColumn = schedule_table[6]
@@ -146,6 +151,17 @@ def winOrLossList(url):
             winOrLossListFinal = winOrLossListFinal
     return(winOrLossListFinal)
 
+
+#this function gets the season statistics for a given team
+#the url is the same url as for boxScoreUrls, it is the url to the team's schedule. For example, "https://www.baseball-reference.com/teams/ARI/2021-schedule-scores.shtml"
+#the team input is the team's abbreviated name like LAD or ARI
+#teamFullName is the team's full name with no spaces and proper capitalization like "ArizonaDiamondbacks"
+#It works with the following steps: 
+#1. get urls for all box scores
+#2. get the batting data for each game using the pullBattingData function
+#3. only keeps the relevant batting statistics
+#4. adds other statistics like homeOrAway, opponent, and winOrLoss for each game
+#5. returns the dataframe
 def getSeasonStats(url, team, teamFullName):
     teamList = []
     battingDataList = []
@@ -170,9 +186,10 @@ def getSeasonStats(url, team, teamFullName):
     dfOfBattingData['Opponent'] = opponent
     dfOfBattingData['HomeOrAway'] = homeOrAway
     dfOfBattingData['url'] = urlList
-    dfOfBattingData.to_csv(teamFullName + "_Batting_Statistics.csv")
+    #dfOfBattingData.to_csv(teamFullName + "_Batting_Statistics.csv")
     return(dfOfBattingData)
 
+#this function finds the moving average of a given stat for a given number of games (for example, 5 game moving average of the runs stats)
 def findMovingAverage(df, columnName, numberOfGames):
     variableList = df[columnName]
     variableSeries = pandas.Series(variableList)
@@ -183,6 +200,7 @@ def findMovingAverage(df, columnName, numberOfGames):
     movingAverageList.pop()
     return(movingAverageList)
 
+#this function adds the 3 game, 10 game, and 31 game moving averages of a given stat to the dataframe/dataset
 def addMovingAveragesOfStat(df, stat):
     movingAverage3 = findMovingAverage(df,stat,3)
     df[stat + '_Moving_Average_3'] = movingAverage3
@@ -191,6 +209,7 @@ def addMovingAveragesOfStat(df, stat):
     movingAverage31 = findMovingAverage(df,stat,31)
     df[stat + '_Moving_Average_31'] = movingAverage31
 
+#this function adds season long average stats to the dataframe/dataset (season long average number of runs)
 def addSeasonLongAverageStatistics(df, stat):
     variableContinuedStatList = []
     variableList = df[stat]
@@ -199,13 +218,14 @@ def addSeasonLongAverageStatistics(df, stat):
     variableContinuedStatList.insert(0,nan)
 
     for i in range(len(variableList)):
-        totalSum = totalSum + variableList[i]
+        totalSum = totalSum + float(variableList[i])
         totalCount = totalCount + 1
         average = totalSum/totalCount
         variableContinuedStatList.append(average)
     variableContinuedStatList.pop()
     df[stat + '_Season_Long_Average'] = variableContinuedStatList
 
+#this function adds the season long totals of a specific stat to the dataframe/dataset (season total number of runs)
 def addSeasonLongCount(df, stat):
     countTotalList = []
     variableList = df[stat]
@@ -217,9 +237,10 @@ def addSeasonLongCount(df, stat):
     countTotalList.pop()
     df[stat + "_Season_Long_Count"] = countTotalList
 
-
-def transformedSeasonStats(df):
-    #df = getSeasonStats(url, team, teamFullName)
+#this function gets the basic stats from the season of a team and transforms them to moving averages, season long counts, 
+#and season long averages in the hopes of adding more relevant variables
+def transformedSeasonStats(url, team, teamFullName):
+    df = getSeasonStats(url, team, teamFullName)
     winsList = df['WinOrLoss']
     winsTotal = 0
     gamesTotal = 0
@@ -259,22 +280,24 @@ def transformedSeasonStats(df):
     addSeasonLongAverageStatistics(df,'OPS')
     return(df)
 
-def completedBattingStatsOfTeamdf(url, team, teamFullName):
-    getSeasonStats(url, team, teamFullName)
-    df = pandas.read_csv(teamFullName + "_Batting_Statistics.csv")
-    transformedDf = transformedSeasonStats(df)
+
+#this creates a csv file on your computer of the batting statistics of the given team
+def createCSVOfTeamStats(url, team, teamFullName):
+    transformedDf = transformedSeasonStats(url, team, teamFullName)
     transformedDf.to_csv(teamFullName + "_Completed_Batting_Statistics.csv")
-    #return(transformedDf)
+    return(transformedDf)
 
 
+#this function creates a csv file for each team in the MLB of their batting statistics
 def completedBattingStatsOfAllTeams():
     allScheduleUrlList = ["https://www.baseball-reference.com/teams/ARI/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/ATL/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/BAL/2021-schedule-scores.shtml", "https://www.baseball-reference.com/teams/BOS/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/CHW/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/CHC/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/CIN/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/CLE/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/COL/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/DET/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/HOU/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/KCR/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/LAA/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/LAD/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/MIA/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/MIL/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/MIN/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/NYY/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/NYM/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/OAK/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/PHI/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/PIT/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/SDP/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/SFG/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/SEA/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/STL/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/TBR/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/TEX/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/TOR/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/WSN/2021-schedule-scores.shtml"]
     allTeamList = ['ARI','ATL','BAL','BOS','CHW','CHC','CIN','CLE','COL','DET','HOU','KCR','LAA','LAD','MIA','MIL','MIN','NYY','NYM','OAK','PHI','PIT','SDP','SFG','SEA','STL','TBR','TEX','TOR','WSN']
     allTeamFullNameList = ["ArizonaDiamondbacks","AtlantaBraves","BaltimoreOrioles","BostonRedSox","ChicagoWhiteSox","ChicagoCubs","CincinnatiReds","ClevelandIndians","ColoradoRockies","DetroitTigers","HoustonAstros","KansasCityRoyals","LosAngelesAngels","LosAngelesDodgers","MiamiMarlins","MilwaukeeBrewers","MinnesotaTwins","NewYorkYankees","NewYorkMets","OaklandAthletics","PhiladelphiaPhillies","PittsburghPirates","SanDiegoPadres","SanFranciscoGiants","SeattleMariners","StLouisCardinals","TampaBayRays","TexasRangers","TorontoBlueJays","WashingtonNationals"]
     for i in range(len(allScheduleUrlList)):
         print(allTeamFullNameList[i])
-        completedBattingStatsOfTeamdf(allScheduleUrlList[i],allTeamList[i],allTeamFullNameList[i])
+        createCSVOfTeamStats(allScheduleUrlList[i],allTeamList[i],allTeamFullNameList[i])
 
+#this combines all the batting stats into one dataframe
 def combineToOneDataFrame():
     ARIdf = pandas.read_csv('ArizonaDiamondbacks_Completed_Batting_Statistics.csv')
     ATLdf = pandas.read_csv('AtlantaBraves_Completed_Batting_Statistics.csv')
@@ -310,11 +333,12 @@ def combineToOneDataFrame():
     dfComplete.to_csv('dfComplete.csv')
     return(dfComplete)
 
+#this function allows you to divide the values of two rows
 def divide(two_rows):
     x, y = two_rows.values
     return pandas.Series(x-y, two_rows.columns)
 
-
+#this function uses the divide function to create new variables which are the ratios between teams of stats
 def createRatioVariables():
     dfOld = pandas.read_csv('dfComplete.csv')
     df = pandas.DataFrame({
@@ -375,27 +399,41 @@ def createRatioVariables():
     df = df.groupby('url')[columns_for_ratio].apply(divide)
     return(df)
 
-def addWinOrLoss():
+
+#this combines all variables into one dataframe
+def addFinalFeatures():
     df = pandas.read_csv('dfComplete.csv')
-    winOrLossDf = df[['WinOrLoss','url','HomeOrAway']]
+    winOrLossDf = df[['WinOrLoss','url','HomeOrAway','R']]
     winOrLossDfDropped = winOrLossDf.iloc[:-2429]
     dfRatio = createRatioVariables()
     #standardizedWin_Percentage = (dfRatio['Win_Percentage']-dfRatio['Win_Percentage'].mean() / dfRatio['Win_Percentage'].std())
     #dfRatio = dfRatio.insert(2,'Standardized_Win',standardizedWin_Percentage)
-    dfRatio = (dfRatio-dfRatio.mean())/dfRatio.std()
+    #dfRatio = (dfRatio-dfRatio.mean())/dfRatio.std()
     dfFinal = pandas.merge(dfRatio,winOrLossDfDropped, on='url')
     dfFinal = dfFinal.dropna(axis=0)
     return(dfFinal)
-
-df = addWinOrLoss()
+"""
+df = addFinalFeatures()
 df = df.drop(['url'],axis=1)
 df = df.replace([numpy.inf,-numpy.inf],nan)
 df = df.dropna(axis=0)
 #df = df.drop(['url'])
-y = df['WinOrLoss']
-x = df[['HomeOrAway']]
 
-#'Win_Percentage_Moving_Average_10','R_Moving_Average_10','SO_Moving_Average_3']]#'Win_Percentage','R_Season_Long_Count','Win_Percentage_Moving_Average_10']]#,'R_Season_Long_Count']]#,'R_Moving_Average_31','R_Season_Long_Count','SLG_Moving_Average_3','SLG_Moving_Average_31','BA_Season_Long_Average','Win_Percentage_Moving_Average_10','OPS_Moving_Average_3','OPS_Moving_Average_10','Win_Percentage_Moving_Average_3']]
+y = df['WinOrLoss']
+x = df[['Win_Percentage']]
+
+"""
+
+""",'R_Season_Long_Count','H_Season_Long_Count','BB_Season_Long_Count','SO_Season_Long_Count','PA_Season_Long_Count','R_Moving_Average_3','R_Moving_Average_10','R_Moving_Average_31','SLG_Moving_Average_3','SLG_Moving_Average_10','SLG_Moving_Average_31','BA_Moving_Average_3','BA_Moving_Average_10','BA_Moving_Average_31'
+    ,'OBP_Moving_Average_3','OBP_Moving_Average_10','OBP_Moving_Average_31','SO_Moving_Average_3','SO_Moving_Average_10','SO_Moving_Average_31','AB_Moving_Average_3','AB_Moving_Average_10','AB_Moving_Average_31'
+    ,'Pit_Moving_Average_3','Pit_Moving_Average_10','Pit_Moving_Average_31','H_Moving_Average_3','H_Moving_Average_10','H_Moving_Average_31'
+    ,'BB_Moving_Average_3','BB_Moving_Average_10','BB_Moving_Average_31','OPS_Moving_Average_3','OPS_Moving_Average_10','OPS_Moving_Average_31'
+    ,'RE24_Moving_Average_3','RE24_Moving_Average_10','RE24_Moving_Average_31','Win_Percentage_Moving_Average_3','Win_Percentage_Moving_Average_10','Win_Percentage_Moving_Average_31',
+    'BA_Season_Long_Average','SLG_Season_Long_Average','OPS_Season_Long_Average','HomeOrAway']]
+
+"""
+#x = (x-x.mean())/x.std()
+#print(x)
 #count = numpy.isinf(df).values.sum()
 #print("It contains " + str(count) + " infinite values")
 #count = numpy.isinf(df).values.sum()
@@ -403,15 +441,171 @@ x = df[['HomeOrAway']]
 #print("done")
 
 #print(x)
+"""
 totalScore = 0
 count = 0
-for i in range(100):   
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.20)
-    forest = RandomForestClassifier(n_estimators = 10, criterion = 'entropy')
-    forest_model = forest.fit(x_train, y_train)
-    score = forest_model.score(x_test, y_test)
-    #print('SVC Linear:', svc_lin_model.score(x_test, y_test))
-    totalScore = totalScore + score
-    count = count + 1
-    print(totalScore/count)
 
+from sklearn.metrics import accuracy_score
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.4)
+mlp = MLPClassifier(hidden_layer_sizes=(45,45,45),max_iter=2000)
+mlp.fit(x_train,y_train)
+predict_train = mlp.predict(x_train)
+predict_test = mlp.predict(x_test)
+print(confusion_matrix(y_test,predict_test))
+print(classification_report(y_test,predict_test))
+"""
+#accuracy_score(y_true, y_pred)
+
+
+
+
+
+"""
+y = df['WinOrLoss']
+
+y = y.iloc[10:1900]
+print(y)
+x = df.drop(['WinOrLoss','url'],axis=1)
+
+x = x.iloc[10:1900]
+print(x)
+
+for i in range(100):
+    print(i)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.2)
+    svc_lin = SVC(kernel = 'linear', )
+    svc_lin_model = svc_lin.fit(x_train, y_train)
+    print('SVC Linear:', svc_lin_model.score(x_test, y_test))
+    #score = svc_lin_model.score(x_test, y_test)
+    #totalScore = totalScore + score
+    #count = count + 1
+    #print(totalScore/count)
+
+#print(x)
+#print(combineToOneDataFrame())
+#print(completedBattingStatsOfAllTeams())
+
+
+#print(findTables("https://www.baseball-reference.com/boxes/OAK/OAK202104030.shtml"))
+#df = createRatioVariables()
+
+#print(df)
+
+#dfBitch.to_csv('fuckYeah.csv')
+#df = df.dropna(axis=0)
+#print(df)
+#dfFull = dfFull.drop(['AB','R','H','RBI','BB','SO','PA','BA','OBP','SLG','OPS','Pit','Str','RE24','WinOrLoss'], axis = 1)
+# try groupby, if it puts the first one right above the second one u can try to just divide each row by the row below it
+
+
+#print(createRatioVariables(df))
+
+
+df = df.dropna(axis = 0)
+y = df['WinOrLoss']
+
+x = df.drop(['AB','R','H','RBI','BB','SO','PA','BA','OBP','SLG','OPS','Pit','Str','RE24','WinOrLoss','Team','Opponent','url' ],axis=1)
+
+for i in range(100):
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.3)
+    svc_lin = SVC(kernel = 'linear', )
+    svc_lin_model = svc_lin.fit(x_train, y_train)
+    print('SVC Linear:', svc_lin_model.score(x_test, y_test))
+    #score = svc_lin_model.score(x_test, y_test)
+    #totalScore = totalScore + score
+    #count = count + 1
+    #print(totalScore/count)
+
+
+
+count = 0
+totalScore =0
+for i in range(100):
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.2)
+    svc_lin = SVC(kernel = 'linear', )
+    svc_lin_model = svc_lin.fit(x_train, y_train)
+    print('SVC Linear:', svc_lin_model.score(x_test, y_test))
+    #score = svc_lin_model.score(x_test, y_test)
+    #totalScore = totalScore + score
+    #count = count + 1
+    #print(totalScore/count)
+#y_pred = svc_lin.predict(x_test)
+#print('Logistic Predictions:', y_pred)
+#print('Actual Results', y_test)
+
+#svc_rbf = SVC(kernel = 'rbf')
+#svc_rbf_model = svc_rbf.fit(x_train, y_train)
+#print('SVC rbf:', svc_rbf_model.score(x_test, y_test))
+
+#tree = DecisionTreeClassifier(criterion = 'entropy')
+#tree_model = tree.fit(x_train, y_train)
+#print('Decision Tree:', tree_model.score(x_test, y_test))
+
+#forest = RandomForestClassifier(n_estimators = 10, criterion = 'entropy', random_state = 0)
+#forest_model = forest.fit(x_train, y_train)
+#print('Random Forest:', forest_model.score(x_test, y_test))
+
+print("done")
+
+
+#combineToOneDataFrame()
+
+
+
+#if re.match(rForLoss, str(pitchingDataList[0])):
+#    pitcherName = (re.sub(rForLoss,"", str(pitchingDataList)))
+
+#print(re.findall(", L.*", str(pitchingDataList)))
+
+#pitcherName = (re.sub(rForLoss,"", str(pitchingDataList)))
+
+#print(pitcherName)
+#elif re.match(rForLoss, str(pitchingDataList)):
+
+#pitcherName = (re.sub(rForLoss,"", str(pitchingDataList)))
+#pitcherName = pitcherName[3:]
+#PitcherName1 = list(filter(rForWin.match, pitchingDataList)) 
+#PitcherName2 = list(filter(rForLoss.match, pitchingDataList)) 
+#print(pitcherName)
+
+
+pitchingData = pullTable("https://www.baseball-reference.com/boxes/OAK/OAK202104030.shtml","OaklandAthleticspitching")
+columnsList = ['Pitcher','IP','H','R','ER','BB','SO','HR','ERA','BF','Pit','Str','Ctct','StS','StL','GB','FB','LD','Unk','GSc','IR','IS','WPA','aLI','cWPA','acLI','RE24']
+pitchingDataDF = pandas.DataFrame(pitchingData, index=range(0,1))
+pitchingDataDF.columns = columnsList
+pitchingDataList = pitchingDataDF.values.tolist()
+rForLoss = re.compile(", L.*")  
+rForWin = re.compile(", W.*") 
+
+df1 = pandas.read_csv("dfComplete.csv")
+
+df1 = df1.dropna(axis = 1)
+
+y = df1["WinOrLoss"]
+x = df1.drop(["WinOrLoss",'AB','R','H','RBI','BB','SO','PA','BA','OBP','SLG','OPS','Pit','Str','RE24','Team','Opponent','url'], axis = 1)
+
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.2)
+
+svc_lin = SVC(kernel = 'linear')
+svc_lin_model = svc_lin.fit(x_train, y_train)
+print('SVC Linear:', svc_lin_model.score(x_test, y_test))
+y_pred = svc_lin.predict(x_test)
+#print('Logistic Predictions:', y_pred)
+#print('Actual Results', y_test)
+
+#svc_rbf = SVC(kernel = 'rbf')
+#svc_rbf_model = svc_rbf.fit(x_train, y_train)
+#print('SVC rbf:', svc_rbf_model.score(x_test, y_test))
+
+tree = DecisionTreeClassifier(criterion = 'entropy')
+tree_model = tree.fit(x_train, y_train)
+print('Decision Tree:', tree_model.score(x_test, y_test))
+
+forest = RandomForestClassifier(n_estimators = 10, criterion = 'entropy', random_state = 0)
+forest_model = forest.fit(x_train, y_train)
+print('Random Forest:', forest_model.score(x_test, y_test))
+
+print("done")
+
+
+"""
