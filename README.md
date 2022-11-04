@@ -2,6 +2,9 @@
 
 This project attempts to predict the outcome of Major League Baseball games using machine learning. 
 
+**THIS PROJECT IS CURRENTLY BEING RE-WORKED TO CLEAN UP THE CODE AND ADD IN MORE DATA TO IMPROVE RESULTS**
+
+
 Process:
 
 1. Use web scraping to obtain data from baseball-reference.com. This data is the team totals from the box scores of each game such as total number of runs, hits, strikeouts, etc. I collected the data for every game and every team from the 2021 season for this project.
