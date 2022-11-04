@@ -19,3 +19,5 @@ Files:
 baseball_reference_scraping_functions.py provides all the necessary functions for scraping data from baseball reference in addition to providing functions for transforming these variables into more complicated statistics like moving averages and subtraction between each team's stats. 
 
 dfComplete.csv provides an example of statistics collected before subtraction takes place. Subtraction refers to subtracting the away team's data from the home team's data in order to create one set of statistics to use for machine learning. The .csv file gives a sense of the extensive data in our dataset.
+
+A file that utilizes the scraping functions to create the dataset will soon be added. Then, a file that utilizes this data for machine learning purposes will be added.
