@@ -13,11 +13,24 @@ df = pd.read_csv("dfFinal.csv")
 
 y = df['WinOrLoss']
 
+#y = y.iloc[10:1900]
+#print(y)
+x = df[['HomeOrAway','Win_Percentage','Pit_Moving_Average_3','SLG_Moving_Average_10','Win_Percentage_Moving_Average_10','OPS_Season_Long_Average','SO_Moving_Average_10']]
 
-x = df[['HomeOrAway','Win_Percentage']] #you can select whichever variables you like from here
+#x = x.iloc[10:1900]
 
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.2)
-svc_lin = SVC(kernel = 'linear', )
-svc_lin_model = svc_lin.fit(x_train, y_train)
-print('SVC Linear:', svc_lin_model.score(x_test, y_test))
+
+#this outputs the accuracy score over 100 separate training and testings 
+totalScore = 0
+count = 0
+for i in range(100):
+    print(i)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.2)
+    svc_lin = SVC(kernel = 'linear', )
+    svc_lin_model = svc_lin.fit(x_train, y_train)
+    print('SVC Linear:', svc_lin_model.score(x_test, y_test))
+    score = svc_lin_model.score(x_test, y_test)
+    totalScore = totalScore + score
+    count = count + 1
+    print(totalScore/count)
 
