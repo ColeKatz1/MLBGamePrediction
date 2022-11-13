@@ -1,8 +1,8 @@
-## MLBGamePrediction
+# MLBGamePrediction
 
 This project attempts to predict the outcome of Major League Baseball games using machine learning. The project currently uses batting statistics and categorical variables such as Home or Away from both teams in the game to predict the game's outcome. 
 
-# Process:
+## Process:
 
 1. Use web scraping to obtain data from baseball-reference.com. This data is the team totals from the box scores of each game such as total number of runs, hits, strikeouts, etc. I collected the data for every game and every team from the 2021 season for this project.
 2. Next, create moving average variables for each team such as moving average of runs, hits, strikeouts, etc in the hopes that these variables will serve as good predictors.
@@ -11,7 +11,7 @@ This project attempts to predict the outcome of Major League Baseball games usin
 5. Use SVM to predict wins and losses for each team
 
 
-# Files: 
+## Files: 
 
 baseball_reference_scraping_functions.py provides all the necessary functions for scraping data from baseball reference in addition to providing functions for transforming these variables into more complicated statistics like moving averages and subtraction between each team's stats. 
 
@@ -21,7 +21,7 @@ create_dataset.py uses the baseball_reference_scraping_functions.py functions to
 
 machine_learning.py, this file runs an svc machine learning algorithm to predict if a game will be a win or loss. It then prints the accuracy of the predictions
 
-# Future:
+## Future:
 
 In order to improve the model's accuracy, more data will be added to the dataset. To start, pitching data, which is very important, will be added. This will include statistics such as ERA and pitch counts. 
 
