@@ -1,9 +1,6 @@
 # MLBGamePrediction
 
-This project attempts to predict the outcome of Major League Baseball games using machine learning. 
-
-**THIS PROJECT IS CURRENTLY BEING RE-WORKED TO CLEAN UP THE CODE AND ADD IN MORE DATA TO IMPROVE RESULTS**
-
+This project attempts to predict the outcome of Major League Baseball games using machine learning. The project currently uses batting statistics and categorical variables such as Home or Away from both teams in the game to predict the game's outcome. 
 
 Process:
 
@@ -23,3 +20,11 @@ dfComplete.csv provides an example of statistics collected before subtraction ta
 create_dataset.py uses the baseball_reference_scraping_functions.py functions to create a final dataset we will use for machine learning.
 
 machine_learning.py, this file runs an svc machine learning algorithm to predict if a game will be a win or loss. It then prints the accuracy of the predictions
+
+Future:
+
+In order to improve the model's accuracy, more data will be added to the dataset. To start, pitching data, which is very important, will be added. This will include statistics such as ERA and pitch counts. 
+
+Next, more categorical variables will be added to the dataset. This will include variables such as the weather in the game and the time at which the game occurs.
+
+Finally, more seasons of data will be added to the dataset. For example, the 2022 season will be added.
