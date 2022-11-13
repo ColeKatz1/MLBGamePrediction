@@ -21,3 +21,5 @@ baseball_reference_scraping_functions.py provides all the necessary functions fo
 dfComplete.csv provides an example of statistics collected before subtraction takes place. Subtraction refers to subtracting the away team's data from the home team's data in order to create one set of statistics to use for machine learning. The .csv file gives a sense of the extensive data in our dataset.
 
 create_dataset.py uses the baseball_reference_scraping_functions.py functions to create a final dataset we will use for machine learning.
+
+machine_learning.py, this file runs an svc machine learning algorithm to predict if a game will be a win or loss. It then prints the accuracy of the predictions
