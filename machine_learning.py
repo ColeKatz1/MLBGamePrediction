@@ -8,7 +8,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.neural_network import MLPRegressor
 import pandas as pd
 
-df = pd.read_csv("dfFinal.csv")
+df = pd.read_csv("dfFinal.csv") #this is the csv file outputted by the create_dataset.py file
 
 
 y = df['WinOrLoss']
