@@ -338,8 +338,8 @@ def subtract(two_rows):
     x, y = two_rows.values
     return pandas.Series(x-y, two_rows.columns)
 
-#this function uses the subtract function to create new variables which are the ratios between teams of stats
-def createRatioVariables():
+#this function uses the subtract function to create new variables which are the difference between teams of stats
+def createSubtractedVariables():
     dfOld = pandas.read_csv('dfComplete.csv')
     df = pandas.DataFrame({
     'url': dfOld['url'],
@@ -390,13 +390,13 @@ def createRatioVariables():
     'OPS_Season_Long_Average': dfOld['OPS_Season_Long_Average'],
 
 })
-    columns_for_ratio = ['Win_Percentage','R_Season_Long_Count','H_Season_Long_Count','BB_Season_Long_Count','SO_Season_Long_Count','PA_Season_Long_Count','R_Moving_Average_3','R_Moving_Average_10','R_Moving_Average_31','SLG_Moving_Average_3','SLG_Moving_Average_10','SLG_Moving_Average_31','BA_Moving_Average_3','BA_Moving_Average_10','BA_Moving_Average_31'
+    columns_for_subtraction = ['Win_Percentage','R_Season_Long_Count','H_Season_Long_Count','BB_Season_Long_Count','SO_Season_Long_Count','PA_Season_Long_Count','R_Moving_Average_3','R_Moving_Average_10','R_Moving_Average_31','SLG_Moving_Average_3','SLG_Moving_Average_10','SLG_Moving_Average_31','BA_Moving_Average_3','BA_Moving_Average_10','BA_Moving_Average_31'
     ,'OBP_Moving_Average_3','OBP_Moving_Average_10','OBP_Moving_Average_31','SO_Moving_Average_3','SO_Moving_Average_10','SO_Moving_Average_31','AB_Moving_Average_3','AB_Moving_Average_10','AB_Moving_Average_31'
     ,'Pit_Moving_Average_3','Pit_Moving_Average_10','Pit_Moving_Average_31','H_Moving_Average_3','H_Moving_Average_10','H_Moving_Average_31'
     ,'BB_Moving_Average_3','BB_Moving_Average_10','BB_Moving_Average_31','OPS_Moving_Average_3','OPS_Moving_Average_10','OPS_Moving_Average_31'
     ,'RE24_Moving_Average_3','RE24_Moving_Average_10','RE24_Moving_Average_31','Win_Percentage_Moving_Average_3','Win_Percentage_Moving_Average_10','Win_Percentage_Moving_Average_31',
     'BA_Season_Long_Average','SLG_Season_Long_Average','OPS_Season_Long_Average']
-    df = df.groupby('url')[columns_for_ratio].apply(subtract)
+    df = df.groupby('url')[columns_for_subtraction].apply(subtract)
     return(df)
 
 
@@ -405,10 +405,7 @@ def addFinalFeatures():
     df = pandas.read_csv('dfComplete.csv')
     winOrLossDf = df[['WinOrLoss','url','HomeOrAway','R']]
     winOrLossDfDropped = winOrLossDf.iloc[:-2429]
-    dfRatio = createRatioVariables()
-    #standardizedWin_Percentage = (dfRatio['Win_Percentage']-dfRatio['Win_Percentage'].mean() / dfRatio['Win_Percentage'].std())
-    #dfRatio = dfRatio.insert(2,'Standardized_Win',standardizedWin_Percentage)
-    #dfRatio = (dfRatio-dfRatio.mean())/dfRatio.std()
-    dfFinal = pandas.merge(dfRatio,winOrLossDfDropped, on='url')
+    dfSubtracted = createSubtractedVariables()
+    dfFinal = pandas.merge(dfSubtracted,winOrLossDfDropped, on='url')
     dfFinal = dfFinal.dropna(axis=0)
     return(dfFinal)
