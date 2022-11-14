@@ -13,11 +13,8 @@ df = pd.read_csv("dfFinal.csv")
 
 y = df['WinOrLoss']
 
-#y = y.iloc[10:1900]
-#print(y)
-x = df[['HomeOrAway','Win_Percentage','Pit_Moving_Average_3','SLG_Moving_Average_10','Win_Percentage_Moving_Average_10','OPS_Season_Long_Average','SO_Moving_Average_10']]
 
-#x = x.iloc[10:1900]
+x = df[['HomeOrAway','Win_Percentage','Pit_Moving_Average_3','SLG_Moving_Average_10','Win_Percentage_Moving_Average_10','OPS_Season_Long_Average','SO_Moving_Average_3']]
 
 
 #this outputs the accuracy score over 100 separate training and testings 
