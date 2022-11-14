@@ -333,12 +333,12 @@ def combineToOneDataFrame():
     dfComplete.to_csv('dfComplete.csv')
     return(dfComplete)
 
-#this function allows you to divide the values of two rows
-def divide(two_rows):
+#this function allows you to subtract the values of two rows
+def subtract(two_rows):
     x, y = two_rows.values
     return pandas.Series(x-y, two_rows.columns)
 
-#this function uses the divide function to create new variables which are the ratios between teams of stats
+#this function uses the subtract function to create new variables which are the ratios between teams of stats
 def createRatioVariables():
     dfOld = pandas.read_csv('dfComplete.csv')
     df = pandas.DataFrame({
@@ -396,7 +396,7 @@ def createRatioVariables():
     ,'BB_Moving_Average_3','BB_Moving_Average_10','BB_Moving_Average_31','OPS_Moving_Average_3','OPS_Moving_Average_10','OPS_Moving_Average_31'
     ,'RE24_Moving_Average_3','RE24_Moving_Average_10','RE24_Moving_Average_31','Win_Percentage_Moving_Average_3','Win_Percentage_Moving_Average_10','Win_Percentage_Moving_Average_31',
     'BA_Season_Long_Average','SLG_Season_Long_Average','OPS_Season_Long_Average']
-    df = df.groupby('url')[columns_for_ratio].apply(divide)
+    df = df.groupby('url')[columns_for_ratio].apply(subtract)
     return(df)
 
 
