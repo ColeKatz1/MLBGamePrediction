@@ -27,4 +27,4 @@ In order to improve the model's accuracy, more data will be added to the dataset
 
 Next, more categorical variables will be added to the dataset. This will include variables such as the weather in the game and the time at which the game occurs.
 
-Finally, more seasons of data will be added to the dataset. For example, the 2022 season will be added.
+Finally, more seasons of data will be added to the dataset. For example, the 2022 season will be added. (The functions have been written to do this and this is currently being done)
