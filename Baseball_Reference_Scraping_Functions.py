@@ -3,9 +3,12 @@ from contextlib import nullcontext
 from itertools import groupby
 from pickle import TRUE
 from random import seed
+from random import randint
+from time import sleep
 from turtle import home
 import pandas, numpy
-import requests, bs4
+import requests
+import bs4
 import re, os
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
@@ -44,6 +47,7 @@ def findTables(url):
 #The url input is the url to the game's box score. For example, "https://www.baseball-reference.com/boxes/SDN/SDN202104010.shtml"
 def pullTable(url, tableID):
     res = requests.get(url)
+    sleep(randint(1,5))
     comm = re.compile("<!--|-->")
     soup = bs4.BeautifulSoup(comm.sub("", res.text), 'lxml')
     tables = soup.findAll('table', id = tableID)
@@ -75,7 +79,7 @@ def pullBattingData(url, team):
 #For example, for the Arizona Diamondsbacks: url = "https://www.baseball-reference.com/teams/ARI/2021-schedule-scores.shtml"
 #Then, running this function with the given url will return a list of urls to every box score of the 2021 season for this team
 def boxScoreUrls(url):
-    res = requests.get(url)
+    res = requests.get(url, headers = {'User-agent': 'youaojsdoiajsdoijsado'})
     comm = re.compile("<!--|-->")
     soup = bs4.BeautifulSoup(comm.sub("", res.text), 'lxml')
     dataLink = []
@@ -169,10 +173,7 @@ def getSeasonStats(url, team, teamFullName):
     for i in urlList:
         battingData = pullBattingData(i, teamFullName)
         battingDataList.append(battingData)
-    if len(battingDataList) == 162:
-        battingDataList = numpy.reshape(battingDataList, (162,24))
-    elif len(battingDataList) == 161:
-        battingDataList = numpy.reshape(battingDataList, (161,24))
+    battingDataList = numpy.reshape(battingDataList, (len(battingDataList),24))
     dfOfBattingData = pandas.DataFrame(battingDataList) 
     dfOfBattingData.columns = ['Batting','AB','R','H','RBI','BB','SO','PA','BA','OBP','SLG','OPS','Pit','Str','WPA','aLI','WPA+','WPA-','cWPA','acLI','RE24','PO','A','Details']
     dfOfBattingData = dfOfBattingData.drop(['Batting','WPA','aLI','WPA+','WPA-','cWPA','acLI','PO','A','Details'], axis=1)
@@ -282,65 +283,48 @@ def transformedSeasonStats(url, team, teamFullName):
 
 
 #this creates a csv file on your computer of the batting statistics of the given team
-def createCSVOfTeamStats(url, team, teamFullName):
+def createCSVOfTeamStats(url, team, teamFullName, year):
     transformedDf = transformedSeasonStats(url, team, teamFullName)
-    transformedDf.to_csv(teamFullName + "_Completed_Batting_Statistics.csv")
+    transformedDf.to_csv(year + teamFullName + "_Completed_Batting_Statistics.csv")
     return(transformedDf)
 
 
-#this function creates a csv file for each team in the MLB of their batting statistics
-def completedBattingStatsOfAllTeams():
-    allScheduleUrlList = ["https://www.baseball-reference.com/teams/ARI/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/ATL/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/BAL/2021-schedule-scores.shtml", "https://www.baseball-reference.com/teams/BOS/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/CHW/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/CHC/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/CIN/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/CLE/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/COL/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/DET/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/HOU/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/KCR/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/LAA/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/LAD/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/MIA/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/MIL/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/MIN/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/NYY/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/NYM/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/OAK/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/PHI/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/PIT/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/SDP/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/SFG/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/SEA/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/STL/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/TBR/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/TEX/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/TOR/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/WSN/2021-schedule-scores.shtml"]
-    allTeamList = ['ARI','ATL','BAL','BOS','CHW','CHC','CIN','CLE','COL','DET','HOU','KCR','LAA','LAD','MIA','MIL','MIN','NYY','NYM','OAK','PHI','PIT','SDP','SFG','SEA','STL','TBR','TEX','TOR','WSN']
+#this function creates a csv file for each team of their batting statistics in a given year 
+def completedBattingStatsOfAllTeams(year):
+    urlList = []
+    #allScheduleUrlList = ["https://www.baseball-reference.com/teams/ARI/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/ATL/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/BAL/2021-schedule-scores.shtml", "https://www.baseball-reference.com/teams/BOS/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/CHW/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/CHC/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/CIN/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/CLE/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/COL/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/DET/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/HOU/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/KCR/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/LAA/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/LAD/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/MIA/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/MIL/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/MIN/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/NYY/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/NYM/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/OAK/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/PHI/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/PIT/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/SDP/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/SFG/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/SEA/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/STL/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/TBR/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/TEX/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/TOR/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/WSN/2021-schedule-scores.shtml"]
+    allTeamList = ['ARI']#,'ATL','BAL','BOS']#,'CHW','CHC','CIN','CLE','COL','DET','HOU','KCR','LAA','LAD','MIA','MIL','MIN','NYY','NYM','OAK','PHI','PIT','SDP','SFG','SEA','STL','TBR','TEX','TOR','WSN']
     allTeamFullNameList = ["ArizonaDiamondbacks","AtlantaBraves","BaltimoreOrioles","BostonRedSox","ChicagoWhiteSox","ChicagoCubs","CincinnatiReds","ClevelandIndians","ColoradoRockies","DetroitTigers","HoustonAstros","KansasCityRoyals","LosAngelesAngels","LosAngelesDodgers","MiamiMarlins","MilwaukeeBrewers","MinnesotaTwins","NewYorkYankees","NewYorkMets","OaklandAthletics","PhiladelphiaPhillies","PittsburghPirates","SanDiegoPadres","SanFranciscoGiants","SeattleMariners","StLouisCardinals","TampaBayRays","TexasRangers","TorontoBlueJays","WashingtonNationals"]
-    for i in range(len(allScheduleUrlList)):
+    for i in range(len(allTeamList)):
+        urlList.append("https://www.baseball-reference.com/teams/" + allTeamList[i] + "/" + year + "-schedule-scores.shtml")
+    
+    #print(urlList)
+    for i in range(len(urlList)):
         print(allTeamFullNameList[i])
-        createCSVOfTeamStats(allScheduleUrlList[i],allTeamList[i],allTeamFullNameList[i])
+        createCSVOfTeamStats(urlList[i],allTeamList[i],allTeamFullNameList[i], year)
 
-#this combines all the batting stats into one dataframe
-def combineToOneDataFrame():
-    ARIdf = pandas.read_csv('ArizonaDiamondbacks_Completed_Batting_Statistics.csv')
-    ATLdf = pandas.read_csv('AtlantaBraves_Completed_Batting_Statistics.csv')
-    BALdf = pandas.read_csv('BaltimoreOrioles_Completed_Batting_Statistics.csv')
-    BOSdf = pandas.read_csv('BostonRedSox_Completed_Batting_Statistics.csv')
-    CHWdf = pandas.read_csv('ChicagoWhiteSox_Completed_Batting_Statistics.csv')
-    CHCdf = pandas.read_csv('ChicagoCubs_Completed_Batting_Statistics.csv')
-    CINdf = pandas.read_csv('CincinnatiReds_Completed_Batting_Statistics.csv')
-    CLEdf = pandas.read_csv('ClevelandIndians_Completed_Batting_Statistics.csv')
-    COLdf = pandas.read_csv('ColoradoRockies_Completed_Batting_Statistics.csv')
-    DETdf = pandas.read_csv('DetroitTigers_Completed_Batting_Statistics.csv')
-    HOUdf = pandas.read_csv('HoustonAstros_Completed_Batting_Statistics.csv')
-    KCRdf = pandas.read_csv('KansasCityRoyals_Completed_Batting_Statistics.csv')
-    LAAdf = pandas.read_csv('LosAngelesAngels_Completed_Batting_Statistics.csv')
-    LADdf = pandas.read_csv('LosAngelesDodgers_Completed_Batting_Statistics.csv')
-    MIAdf = pandas.read_csv('MiamiMarlins_Completed_Batting_Statistics.csv')
-    MILdf = pandas.read_csv('MilwaukeeBrewers_Completed_Batting_Statistics.csv')
-    MINdf = pandas.read_csv('MinnesotaTwins_Completed_Batting_Statistics.csv')
-    NYYdf = pandas.read_csv('NewYorkYankees_Completed_Batting_Statistics.csv')
-    NYMdf = pandas.read_csv('NewYorkMets_Completed_Batting_Statistics.csv')
-    OAKdf = pandas.read_csv('OaklandAthletics_Completed_Batting_Statistics.csv')
-    PHIdf = pandas.read_csv('PhiladelphiaPhillies_Completed_Batting_Statistics.csv')
-    PITdf = pandas.read_csv('PittsburghPirates_Completed_Batting_Statistics.csv')
-    SDPdf = pandas.read_csv('SanDiegoPadres_Completed_Batting_Statistics.csv')
-    SFGdf = pandas.read_csv('SanfranciscoGiants_Completed_Batting_Statistics.csv')
-    SEAdf = pandas.read_csv('SeattleMariners_Completed_Batting_Statistics.csv')
-    STLdf = pandas.read_csv('StLouisCardinals_Completed_Batting_Statistics.csv')
-    TBRdf = pandas.read_csv('TampaBayRays_Completed_Batting_Statistics.csv')
-    TEXdf = pandas.read_csv('TexasRangers_Completed_Batting_Statistics.csv')
-    TORdf = pandas.read_csv('TorontoBlueJays_Completed_Batting_Statistics.csv')
-    WASdf = pandas.read_csv('WashingtonNationals_Completed_Batting_Statistics.csv')
-    dfComplete = pandas.concat([ARIdf,ATLdf,BALdf,BOSdf,CHWdf,CHCdf,CINdf,CLEdf,COLdf,DETdf,HOUdf,KCRdf,LAAdf,LADdf,MIAdf,MILdf,MINdf,NYYdf,NYMdf,OAKdf,PHIdf,PITdf,SDPdf,SFGdf,SEAdf,STLdf,TBRdf,TEXdf,TORdf,WASdf])
-    dfComplete.to_csv('dfComplete.csv')
-    return(dfComplete)
-
+#this combines all the batting stats into one dataframe by season year
+def combineToOneDataFrame(year):
+    allDf = []
+    allTeamFullNameList = ["ArizonaDiamondbacks","AtlantaBraves","BaltimoreOrioles","BostonRedSox","ChicagoWhiteSox","ChicagoCubs","CincinnatiReds","ClevelandIndians","ColoradoRockies","DetroitTigers","HoustonAstros","KansasCityRoyals","LosAngelesAngels","LosAngelesDodgers","MiamiMarlins","MilwaukeeBrewers","MinnesotaTwins","NewYorkYankees","NewYorkMets","OaklandAthletics","PhiladelphiaPhillies","PittsburghPirates","SanDiegoPadres","SanFranciscoGiants","SeattleMariners","StLouisCardinals","TampaBayRays","TexasRangers","TorontoBlueJays","WashingtonNationals"]
+    for i in range(len(allTeamFullNameList)):
+        data = pandas.read_csv(year + allTeamFullNameList[i] + "_Completed_Batting_Statistics.csv")
+        allDf.append(data)
+    
+    allDf = pandas.concat(allDf)
+    allDf.to_csv(year +'dfComplete.csv')
+    return(allDf)
+    
 #this function allows you to subtract the values of two rows
 def subtract(two_rows):
     x, y = two_rows.values
     return pandas.Series(x-y, two_rows.columns)
 
 #this function uses the subtract function to create new variables which are the difference between teams of stats
-def createSubtractedVariables():
+def createSubtractionVariables():
     dfOld = pandas.read_csv('dfComplete.csv')
+    dfOld = dfOld.sort_values('HomeOrAway')
+    dfOld.to_csv('dfComplete.csv')
     df = pandas.DataFrame({
     'url': dfOld['url'],
     'Win_Percentage': dfOld['Win_Percentage'],
@@ -402,10 +386,11 @@ def createSubtractedVariables():
 
 #this combines all variables into one dataframe
 def addFinalFeatures():
+    dfSubtracted = createSubtractionVariables()
     df = pandas.read_csv('dfComplete.csv')
     winOrLossDf = df[['WinOrLoss','url','HomeOrAway','R']]
     winOrLossDfDropped = winOrLossDf.iloc[:-2429]
-    dfSubtracted = createSubtractedVariables()
     dfFinal = pandas.merge(dfSubtracted,winOrLossDfDropped, on='url')
     dfFinal = dfFinal.dropna(axis=0)
+    dfFinal.to_csv("dfFinal.csv")
     return(dfFinal)
