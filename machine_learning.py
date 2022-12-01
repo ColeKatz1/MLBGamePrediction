@@ -25,8 +25,8 @@ for i in range(100):
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.2)
     svc_lin = SVC(kernel = 'linear', )
     svc_lin_model = svc_lin.fit(x_train, y_train)
-    print('SVC Linear:', svc_lin_model.score(x_test, y_test))
-    score = svc_lin_model.score(x_test, y_test)
+    y_pred = svc_lin_model.predict(x_test)
+    score = accuracy_score(y_test, y_pred)
     totalScore = totalScore + score
     count = count + 1
     print(totalScore/count)
