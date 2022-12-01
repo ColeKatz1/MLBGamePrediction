@@ -112,9 +112,9 @@ def homeOrAwayList(url):
     homeOrAwayBinary = []
     
     for i in range(len(homeOrAway)):
-        if homeOrAway[i] == '@':
+        if homeOrAway[i] is '@':
             homeOrAwayBinary.append(1)
-        elif homeOrAway[i] == '':
+        elif homeOrAway[i] is '':
             homeOrAwayBinary.append(0)
         else:
             homeOrAwayBinary = homeOrAwayBinary
@@ -147,9 +147,9 @@ def winOrLossList(url):
     winOrLossList = winOrLossColumn.values.tolist()
     winOrLossListFinal = []
     for i in range(len(winOrLossList)):
-        if winOrLossList[i] == 'W' or winOrLossList[i] == 'W-wo':
+        if winOrLossList[i] is 'W' or winOrLossList[i] is 'W-wo':
             winOrLossListFinal.append(0)
-        elif winOrLossList[i] == 'L' or winOrLossList[i] == 'L-wo':
+        elif winOrLossList[i] is 'L' or winOrLossList[i] is 'L-wo':
             winOrLossListFinal.append(1)
         else:
             winOrLossListFinal = winOrLossListFinal
@@ -248,12 +248,12 @@ def transformedSeasonStats(url, team, teamFullName):
     winningPercentageList = []
     winningPercentageList.insert(0,nan)
     for i in range(len(winsList)):
-        if winsList[i] == 0:
+        if winsList[i] is 0:
             winsTotal = winsTotal + 1
             gamesTotal = gamesTotal + 1
             winningPercentage = winsTotal / gamesTotal
             winningPercentageList.append(winningPercentage)
-        elif winsList[i] == 1:
+        elif winsList[i] is 1:
             gamesTotal = gamesTotal + 1
             winningPercentage = winsTotal / gamesTotal
             winningPercentageList.append(winningPercentage)
@@ -292,9 +292,14 @@ def createCSVOfTeamStats(url, team, teamFullName, year):
 #this function creates a csv file for each team of their batting statistics in a given year 
 def completedBattingStatsOfAllTeams(year):
     urlList = []
+    if year is "2022": #the cleveland guardians changed their name, so we need a separate list for the 2022 season
+        allTeamList = ['ARI','ATL','BAL','BOS','CHW','CHC','CIN','CLE','COL','DET','HOU','KCR','LAA','LAD','MIA','MIL','MIN','NYY','NYM','OAK','PHI','PIT','SDP','SFG','SEA','STL','TBR','TEX','TOR','WSN']
+        allTeamFullNameList = ["ArizonaDiamondbacks","AtlantaBraves","BaltimoreOrioles","BostonRedSox","ChicagoWhiteSox","ChicagoCubs","CincinnatiReds","ClevelandGuardians","ColoradoRockies","DetroitTigers","HoustonAstros","KansasCityRoyals","LosAngelesAngels","LosAngelesDodgers","MiamiMarlins","MilwaukeeBrewers","MinnesotaTwins","NewYorkYankees","NewYorkMets","OaklandAthletics","PhiladelphiaPhillies","PittsburghPirates","SanDiegoPadres","SanFranciscoGiants","SeattleMariners","StLouisCardinals","TampaBayRays","TexasRangers","TorontoBlueJays","WashingtonNationals"]
+    else:
+        allTeamList = ['ARI','ATL','BAL','BOS','CHW','CHC','CIN','CLE','COL','DET','HOU','KCR','LAA','LAD','MIA','MIL','MIN','NYY','NYM','OAK','PHI','PIT','SDP','SFG','SEA','STL','TBR','TEX','TOR','WSN']
+        allTeamFullNameList = ["ArizonaDiamondbacks","AtlantaBraves","BaltimoreOrioles","BostonRedSox","ChicagoWhiteSox","ChicagoCubs","CincinnatiReds","ClevelandIndians","ColoradoRockies","DetroitTigers","HoustonAstros","KansasCityRoyals","LosAngelesAngels","LosAngelesDodgers","MiamiMarlins","MilwaukeeBrewers","MinnesotaTwins","NewYorkYankees","NewYorkMets","OaklandAthletics","PhiladelphiaPhillies","PittsburghPirates","SanDiegoPadres","SanFranciscoGiants","SeattleMariners","StLouisCardinals","TampaBayRays","TexasRangers","TorontoBlueJays","WashingtonNationals"]
     #allScheduleUrlList = ["https://www.baseball-reference.com/teams/ARI/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/ATL/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/BAL/2021-schedule-scores.shtml", "https://www.baseball-reference.com/teams/BOS/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/CHW/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/CHC/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/CIN/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/CLE/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/COL/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/DET/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/HOU/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/KCR/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/LAA/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/LAD/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/MIA/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/MIL/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/MIN/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/NYY/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/NYM/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/OAK/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/PHI/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/PIT/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/SDP/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/SFG/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/SEA/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/STL/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/TBR/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/TEX/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/TOR/2021-schedule-scores.shtml","https://www.baseball-reference.com/teams/WSN/2021-schedule-scores.shtml"]
-    allTeamList = ['ARI']#,'ATL','BAL','BOS']#,'CHW','CHC','CIN','CLE','COL','DET','HOU','KCR','LAA','LAD','MIA','MIL','MIN','NYY','NYM','OAK','PHI','PIT','SDP','SFG','SEA','STL','TBR','TEX','TOR','WSN']
-    allTeamFullNameList = ["ArizonaDiamondbacks","AtlantaBraves","BaltimoreOrioles","BostonRedSox","ChicagoWhiteSox","ChicagoCubs","CincinnatiReds","ClevelandIndians","ColoradoRockies","DetroitTigers","HoustonAstros","KansasCityRoyals","LosAngelesAngels","LosAngelesDodgers","MiamiMarlins","MilwaukeeBrewers","MinnesotaTwins","NewYorkYankees","NewYorkMets","OaklandAthletics","PhiladelphiaPhillies","PittsburghPirates","SanDiegoPadres","SanFranciscoGiants","SeattleMariners","StLouisCardinals","TampaBayRays","TexasRangers","TorontoBlueJays","WashingtonNationals"]
+    
     for i in range(len(allTeamList)):
         urlList.append("https://www.baseball-reference.com/teams/" + allTeamList[i] + "/" + year + "-schedule-scores.shtml")
     
