@@ -112,9 +112,9 @@ def homeOrAwayList(url):
     homeOrAwayBinary = []
     
     for i in range(len(homeOrAway)):
-        if homeOrAway[i] is '@':
+        if homeOrAway[i] == '@':
             homeOrAwayBinary.append(1)
-        elif homeOrAway[i] is '':
+        elif homeOrAway[i] == '':
             homeOrAwayBinary.append(0)
         else:
             homeOrAwayBinary = homeOrAwayBinary
@@ -147,9 +147,9 @@ def winOrLossList(url):
     winOrLossList = winOrLossColumn.values.tolist()
     winOrLossListFinal = []
     for i in range(len(winOrLossList)):
-        if winOrLossList[i] is 'W' or winOrLossList[i] is 'W-wo':
+        if winOrLossList[i] == 'W' or winOrLossList[i] == 'W-wo':
             winOrLossListFinal.append(0)
-        elif winOrLossList[i] is 'L' or winOrLossList[i] is 'L-wo':
+        elif winOrLossList[i] == 'L' or winOrLossList[i] == 'L-wo':
             winOrLossListFinal.append(1)
         else:
             winOrLossListFinal = winOrLossListFinal
@@ -248,12 +248,12 @@ def transformedSeasonStats(url, team, teamFullName):
     winningPercentageList = []
     winningPercentageList.insert(0,nan)
     for i in range(len(winsList)):
-        if winsList[i] is 0:
+        if winsList[i] == 0:
             winsTotal = winsTotal + 1
             gamesTotal = gamesTotal + 1
             winningPercentage = winsTotal / gamesTotal
             winningPercentageList.append(winningPercentage)
-        elif winsList[i] is 1:
+        elif winsList[i] == 1:
             gamesTotal = gamesTotal + 1
             winningPercentage = winsTotal / gamesTotal
             winningPercentageList.append(winningPercentage)
@@ -292,7 +292,7 @@ def createCSVOfTeamStats(url, team, teamFullName, year):
 #this function creates a csv file for each team of their batting statistics in a given year 
 def completedBattingStatsOfAllTeams(year):
     urlList = []
-    if year is "2022": #the cleveland guardians changed their name, so we need a separate list for the 2022 season
+    if year == "2022": #the cleveland guardians changed their name, so we need a separate list for the 2022 season
         allTeamList = ['ARI','ATL','BAL','BOS','CHW','CHC','CIN','CLE','COL','DET','HOU','KCR','LAA','LAD','MIA','MIL','MIN','NYY','NYM','OAK','PHI','PIT','SDP','SFG','SEA','STL','TBR','TEX','TOR','WSN']
         allTeamFullNameList = ["ArizonaDiamondbacks","AtlantaBraves","BaltimoreOrioles","BostonRedSox","ChicagoWhiteSox","ChicagoCubs","CincinnatiReds","ClevelandGuardians","ColoradoRockies","DetroitTigers","HoustonAstros","KansasCityRoyals","LosAngelesAngels","LosAngelesDodgers","MiamiMarlins","MilwaukeeBrewers","MinnesotaTwins","NewYorkYankees","NewYorkMets","OaklandAthletics","PhiladelphiaPhillies","PittsburghPirates","SanDiegoPadres","SanFranciscoGiants","SeattleMariners","StLouisCardinals","TampaBayRays","TexasRangers","TorontoBlueJays","WashingtonNationals"]
     else:
@@ -311,7 +311,11 @@ def completedBattingStatsOfAllTeams(year):
 #this combines all the batting stats into one dataframe by season year
 def combineToOneDataFrame(year):
     allDf = []
-    allTeamFullNameList = ["ArizonaDiamondbacks","AtlantaBraves","BaltimoreOrioles","BostonRedSox","ChicagoWhiteSox","ChicagoCubs","CincinnatiReds","ClevelandIndians","ColoradoRockies","DetroitTigers","HoustonAstros","KansasCityRoyals","LosAngelesAngels","LosAngelesDodgers","MiamiMarlins","MilwaukeeBrewers","MinnesotaTwins","NewYorkYankees","NewYorkMets","OaklandAthletics","PhiladelphiaPhillies","PittsburghPirates","SanDiegoPadres","SanFranciscoGiants","SeattleMariners","StLouisCardinals","TampaBayRays","TexasRangers","TorontoBlueJays","WashingtonNationals"]
+    if year == "2022": #the cleveland guardians changed their name, so we need a separate list for the 2022 season
+        allTeamFullNameList = ["ArizonaDiamondbacks","AtlantaBraves","BaltimoreOrioles","BostonRedSox","ChicagoWhiteSox","ChicagoCubs","CincinnatiReds","ClevelandGuardians","ColoradoRockies","DetroitTigers","HoustonAstros","KansasCityRoyals","LosAngelesAngels","LosAngelesDodgers","MiamiMarlins","MilwaukeeBrewers","MinnesotaTwins","NewYorkYankees","NewYorkMets","OaklandAthletics","PhiladelphiaPhillies","PittsburghPirates","SanDiegoPadres","SanFranciscoGiants","SeattleMariners","StLouisCardinals","TampaBayRays","TexasRangers","TorontoBlueJays","WashingtonNationals"]
+    else:
+        allTeamFullNameList = ["ArizonaDiamondbacks","AtlantaBraves","BaltimoreOrioles","BostonRedSox","ChicagoWhiteSox","ChicagoCubs","CincinnatiReds","ClevelandIndians","ColoradoRockies","DetroitTigers","HoustonAstros","KansasCityRoyals","LosAngelesAngels","LosAngelesDodgers","MiamiMarlins","MilwaukeeBrewers","MinnesotaTwins","NewYorkYankees","NewYorkMets","OaklandAthletics","PhiladelphiaPhillies","PittsburghPirates","SanDiegoPadres","SanFranciscoGiants","SeattleMariners","StLouisCardinals","TampaBayRays","TexasRangers","TorontoBlueJays","WashingtonNationals"]
+    
     for i in range(len(allTeamFullNameList)):
         data = pandas.read_csv(year + allTeamFullNameList[i] + "_Completed_Batting_Statistics.csv")
         allDf.append(data)
@@ -319,7 +323,15 @@ def combineToOneDataFrame(year):
     allDf = pandas.concat(allDf)
     allDf.to_csv(year +'dfComplete.csv')
     return(allDf)
-    
+
+def combineAllYears(years):
+    bigDf = []
+    for year in years:
+        data = pandas.read_csv(year +'dfComplete.csv')
+        bigDf.append(data)
+    bigDf = pandas.concat(bigDf)
+    bigDf.to_csv('allYearsDfComplete.csv')
+        
 #this function allows you to subtract the values of two rows
 def subtract(two_rows):
     x, y = two_rows.values
@@ -327,9 +339,9 @@ def subtract(two_rows):
 
 #this function uses the subtract function to create new variables which are the difference between teams of stats
 def createSubtractionVariables():
-    dfOld = pandas.read_csv('dfComplete.csv')
+    dfOld = pandas.read_csv('allYearsDfComplete.csv')
     dfOld = dfOld.sort_values('HomeOrAway')
-    dfOld.to_csv('dfComplete.csv')
+    dfOld.to_csv('allYearsDfComplete.csv')
     df = pandas.DataFrame({
     'url': dfOld['url'],
     'Win_Percentage': dfOld['Win_Percentage'],
@@ -392,9 +404,10 @@ def createSubtractionVariables():
 #this combines all variables into one dataframe
 def addFinalFeatures():
     dfSubtracted = createSubtractionVariables()
-    df = pandas.read_csv('dfComplete.csv')
+    df = pandas.read_csv('allYearsDfComplete.csv')
     winOrLossDf = df[['WinOrLoss','url','HomeOrAway','R']]
-    winOrLossDfDropped = winOrLossDf.iloc[:-2429]
+    halfRowLength = int(len(winOrLossDf.index)/2)
+    winOrLossDfDropped = winOrLossDf.iloc[:halfRowLength]
     dfFinal = pandas.merge(dfSubtracted,winOrLossDfDropped, on='url')
     dfFinal = dfFinal.dropna(axis=0)
     dfFinal.to_csv("dfFinal.csv")
